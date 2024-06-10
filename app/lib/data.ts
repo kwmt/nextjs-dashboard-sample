@@ -37,15 +37,9 @@ export async function fetchRevenue() {
       .from('revenue')
       .select('*');
 
-      console.log(data, error);    
     if (error) {
       console.log(error)
       throw error;
-
-    }
-
-    if (data) {
-      console.log("kkk" + data)
     }
 
     return {
@@ -59,25 +53,54 @@ export async function fetchRevenue() {
   }
 }
 
-// export async function fetchLatestInvoices() {
-//   try {
-//     const data = await sql<LatestInvoiceRaw>`
-//       SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
-//       FROM invoices
-//       JOIN customers ON invoices.customer_id = customers.id
-//       ORDER BY invoices.date DESC
-//       LIMIT 5`;
+export async function fetchLatestInvoices() {
+  try {
 
-//     const latestInvoices = data.rows.map((invoice) => ({
-//       ...invoice,
-//       amount: formatCurrency(invoice.amount),
-//     }));
-//     return latestInvoices;
-//   } catch (error) {
-//     console.error('Database Error:', error);
-//     throw new Error('Failed to fetch the latest invoices.');
-//   }
-// }
+    const invoicesWithCustomersQuery = supabase.from('invoices').select(`
+    id,
+    amount,
+    date,
+    customers (
+      id,
+      name,
+      image_url,
+      email
+    )
+  `).order('date', { ascending: false })
+  .limit(5)
+  type InvoicesWithCustomers = QueryData<typeof invoicesWithCustomersQuery>
+  
+  const { data, error } = await invoicesWithCustomersQuery
+  if (error) {
+    console.log(error)
+    throw error;
+  }
+
+    // const data = await sql<LatestInvoiceRaw>`
+    //   SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
+    //   FROM invoices
+    //   JOIN customers ON invoices.customer_id = customers.id
+    //   ORDER BY invoices.date DESC
+    //   LIMIT 5`;
+
+    const latestInvoices = data.map((invoice) => ({
+      id: invoice.id,
+      name: invoice.customers?.name,
+      image_url: invoice.customers?.image_url,
+      email: invoice.customers?.email,
+      amount: formatCurrency(invoice.amount),
+    }));
+    // return latestInvoices;
+    return {
+      props: {
+        invoices: latestInvoices,
+      }
+    };
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch the latest invoices.');
+  }
+}
 
 // export async function fetchCardData() {
 //   try {

@@ -2,10 +2,8 @@ import { Card } from '@/app/ui/dashboard/cards';
 import RevenueChart from '@/app/ui/dashboard/revenue-chart';
 import LatestInvoices from '@/app/ui/dashboard/latest-invoices';
 import { lusitana } from '@/app/ui/fonts';
-import { fetchRevenue } from '@/app/lib/data';
+import { fetchRevenue, fetchLatestInvoices } from '@/app/lib/data';
 import { Revenue } from '../lib/definitions';
-
-
 
 type Props = {
   countries: Revenue[];
@@ -14,11 +12,15 @@ type Props = {
 export default async function Page() {
     console.log("page")
     const revenue = await fetchRevenue();
-    console.log('aaarevenue '+ revenue.props.revenues?.length)
+    const latestInvoices = await fetchLatestInvoices();
+    console.log('latestInvoices '+ latestInvoices)
     revenue.props.revenues?.forEach ((revenue) =>  {
         console.log(revenue)
-    }
-  )
+    })
+    console.log('------')
+    latestInvoices.props.invoices?.forEach ((invoice) =>  {
+      console.log(invoice)
+  })
     
   return (
     <main>
@@ -37,7 +39,7 @@ export default async function Page() {
       </div>
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4 lg:grid-cols-8">
         <RevenueChart revenue={revenue.props.revenues}  />
-        {/* <LatestInvoices latestInvoices={latestInvoices} /> */}
+        <LatestInvoices latestInvoices={latestInvoices.props.invoices} />
       </div>
     </main>
   );
