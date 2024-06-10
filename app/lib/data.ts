@@ -8,6 +8,7 @@ import {
   User,
   Revenue,
   Invoice,
+  LatestInvoice,
 } from './definitions';
 import { formatCurrency } from './utils';
 import { Database } from './supabase';
@@ -18,11 +19,7 @@ const supabaseAnonKey = process.env.SUPABASE_KEY as string;
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
-type Props = {
-  revenues: Revenue[];
-};
-
-export async function fetchRevenue() {
+export async function fetchRevenue(): Promise<Revenue[]> {
   // Add noStore() here to prevent the response from being cached.
   // This is equivalent to in fetch(..., {cache: 'no-store'}).
 
@@ -42,18 +39,14 @@ export async function fetchRevenue() {
       throw error;
     }
 
-    return {
-      props: {
-        revenues: data,
-      }
-    }
+    return data as Revenue[];
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch revenue data.');
   }
 }
 
-export async function fetchLatestInvoices() {
+export async function fetchLatestInvoices(): Promise<LatestInvoice[]> {
   try {
 
     const invoicesWithCustomersQuery = supabase.from('invoices').select(`
@@ -66,36 +59,25 @@ export async function fetchLatestInvoices() {
       image_url,
       email
     )
-  `).order('date', { ascending: false })
-  .limit(5)
-  type InvoicesWithCustomers = QueryData<typeof invoicesWithCustomersQuery>
-  
-  const { data, error } = await invoicesWithCustomersQuery
-  if (error) {
-    console.log(error)
-    throw error;
-  }
+  `).order('date', { ascending: false }).limit(5)
 
-    // const data = await sql<LatestInvoiceRaw>`
-    //   SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
-    //   FROM invoices
-    //   JOIN customers ON invoices.customer_id = customers.id
-    //   ORDER BY invoices.date DESC
-    //   LIMIT 5`;
+    type InvoicesWithCustomers = QueryData<typeof invoicesWithCustomersQuery>
 
-    const latestInvoices = data.map((invoice) => ({
-      id: invoice.id,
-      name: invoice.customers?.name,
-      image_url: invoice.customers?.image_url,
-      email: invoice.customers?.email,
+    const { data, error } = await invoicesWithCustomersQuery
+    if (error) {
+      console.log(error)
+      throw error;
+    }
+
+    const latestInvoices: LatestInvoice[] = data.map((invoice) => ({
+      id: String(invoice.id),
+      name: invoice.customers?.name ?? "",
+      image_url: invoice.customers?.image_url ?? "",
+      email: invoice.customers?.email ?? "",
       amount: formatCurrency(invoice.amount),
     }));
-    // return latestInvoices;
-    return {
-      props: {
-        invoices: latestInvoices,
-      }
-    };
+    return latestInvoices;
+
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch the latest invoices.');

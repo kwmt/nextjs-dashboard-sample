@@ -14,12 +14,12 @@ export default async function Page() {
     const revenue = await fetchRevenue();
     const latestInvoices = await fetchLatestInvoices();
     console.log('latestInvoices '+ latestInvoices)
-    revenue.props.revenues?.forEach ((revenue) =>  {
+    revenue.forEach ((revenue) =>  {
         console.log(revenue)
     })
     console.log('------')
-    latestInvoices.props.invoices?.forEach ((invoice) =>  {
-      console.log(invoice)
+    latestInvoices.forEach ((latestInvoice) =>  {
+      console.log(latestInvoice)
   })
     
   return (
@@ -38,8 +38,8 @@ export default async function Page() {
         /> */}
       </div>
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4 lg:grid-cols-8">
-        <RevenueChart revenue={revenue.props.revenues}  />
-        <LatestInvoices latestInvoices={latestInvoices.props.invoices} />
+        <RevenueChart revenue={revenue}  />
+        <LatestInvoices latestInvoices={latestInvoices} />
       </div>
     </main>
   );
