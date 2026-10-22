@@ -119,6 +119,61 @@ export async function fetchLatestInvoices(): Promise<LatestInvoice[]> {
 //   }
 // }
 
+const ITEMS_PER_PAGE = 6;
+export async function fetchFilteredInvoices(
+  query: string,
+  currentPage: number,
+): Promise<InvoicesTable[]> {
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  try {
+    let invoicesWithCustomersQuery = supabase.from('invoices').select(`
+    id,
+    customer_id,
+    amount,
+    date,
+    status,
+    customers!inner (
+      name,
+      email,
+      image_url
+    )
+  `);
+
+    if (query) {
+      // PostgREST の or フィルタで区切り文字として解釈されないよう値をダブルクォートで囲む
+      const pattern = `"%${query.replace(/["\\]/g, '\\$&')}%"`;
+      invoicesWithCustomersQuery = invoicesWithCustomersQuery.or(
+        `name.ilike.${pattern},email.ilike.${pattern}`,
+        { referencedTable: 'customers' },
+      );
+    }
+
+    const { data, error } = await invoicesWithCustomersQuery
+      .order('date', { ascending: false })
+      .range(offset, offset + ITEMS_PER_PAGE - 1);
+    if (error) {
+      console.log(error)
+      throw error;
+    }
+
+    const invoices: InvoicesTable[] = data.map((invoice) => ({
+      id: String(invoice.id),
+      customer_id: invoice.customer_id,
+      name: invoice.customers?.name ?? "",
+      email: invoice.customers?.email ?? "",
+      image_url: invoice.customers?.image_url ?? "",
+      date: invoice.date ?? "",
+      amount: invoice.amount,
+      status: invoice.status as InvoicesTable['status'],
+    }));
+    return invoices;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch invoices.');
+  }
+}
+
 // const ITEMS_PER_PAGE = 6;
 // export async function fetchFilteredInvoices(
 //   query: string,
